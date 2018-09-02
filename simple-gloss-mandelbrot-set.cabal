@@ -21,5 +21,6 @@ executable simple-gloss-mandelbrot-set
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9
                      , gloss
+                     , vector == 0.12.0.1
   hs-source-dirs:      src
   default-language:    Haskell2010

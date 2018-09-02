@@ -1,6 +1,7 @@
 module Main where
 
 import Data.Complex
+import qualified Data.Vector as V
 
 import Graphics.Gloss.Data.Display
 import Graphics.Gloss.Data.Color
@@ -35,8 +36,8 @@ fractalRadius = 2.0
 
 
 fractalCalc :: (Complex Float, Complex Float) -> ((Float,Float),Bool)
-fractalCalc n = let a1 = iterate (\(start,c) -> (start*start + c,c)) (fmap (*0.005) n) :: [(Complex Float, Complex Float)] 
-                    a = length . filter (\(x,_) -> (realPart . abs $ x) <= fractalRadius) . take 50 $ a1 :: Int 
+fractalCalc n = let a1 = V.iterateN 50 (\(start,c) -> (start*start + c,c)) (fmap (*0.005) n) :: V.Vector (Complex Float, Complex Float)
+                    a = V.length . V.filter (\(x,_) -> (realPart . abs $ x) <= fractalRadius) $  a1 :: Int 
                     b =  if (a >= 49)
                        then False
                        else True
