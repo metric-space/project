@@ -37,23 +37,21 @@ fractalRadius = 2.0
 
 fractalCalc :: (Complex Float, Complex Float) -> ((Float,Float),Bool)
 fractalCalc n = let a1 = V.iterateN 50 (\(start,c) -> (start*start + c,c)) (fmap (*0.005) n) :: V.Vector (Complex Float, Complex Float)
-                    a = V.length . V.filter (\(x,_) -> (realPart . abs $ x) <= fractalRadius) $  a1 :: Int 
-                    b =  if (a >= 49)
-                       then False
-                       else True
+                    b = (realPart . abs . fst .V.last $ a1) <= fractalRadius :: Bool
                     c = snd n
                     d = (realPart c, imagPart c) :: (Float, Float)
                 in (d, b) 
 
 
-complexBlock :: [(Complex Float, Complex Float)]
+complexBlock :: V.Vector (Complex Float, Complex Float)
 complexBlock = let x = [-400.0..400.0]
+                   xv = V.fromList x
                    c = 0 :+ 0
-               in [(c,a :+ b) | a <- x, b <- x]
+               in V.concatMap (\x -> V.map (\z -> (c, x :+ z)) xv) xv
 
 
 fractal :: Picture
-fractal =  mconcat . map (blockf . fractalCalc) $ complexBlock
+fractal =  mconcat . V.toList . V.map (blockf . fractalCalc) $ complexBlock
 
 
 main :: IO ()
