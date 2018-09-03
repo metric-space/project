@@ -1,5 +1,7 @@
 module Main where
 
+
+import Control.Monad.Par
 import Data.Complex
 import qualified Data.Vector as V
 
@@ -24,20 +26,19 @@ pseudoPixel :: Picture
 pseudoPixel = rectangleSolid 1.0 1.0
 
 
-blockf :: ((Float, Float), Bool) -> Picture
-blockf ((x,y),t) = let b = if t
-                            then blackColor
-                            else whiteColor
-                   in color b (translate x y pseudoPixel)
+blockf :: ((Float, Float), Int) -> Picture
+blockf ((x,y),t) = let b = ((fromIntegral t) / 25) :: Float
+                       c = makeColor b b b 1.0
+                   in color c (translate x y pseudoPixel)
 
 
 fractalRadius :: Float
 fractalRadius = 2.0 
 
 
-fractalCalc :: (Complex Float, Complex Float) -> ((Float,Float),Bool)
+fractalCalc :: (Complex Float, Complex Float) -> ((Float,Float),Int)
 fractalCalc n = let a1 = V.iterateN 50 (\(start,c) -> (start*start + c,c)) (fmap (*0.005) n) :: V.Vector (Complex Float, Complex Float)
-                    b = (realPart . abs . fst .V.last $ a1) <= fractalRadius :: Bool
+                    b =  V.length . V.filter (> fractalRadius) . V.map (realPart . abs . fst)  $ a1 :: Int
                     c = snd n
                     d = (realPart c, imagPart c) :: (Float, Float)
                 in (d, b) 
@@ -49,9 +50,11 @@ complexBlock = let x = [-400.0..400.0]
                    c = 0 :+ 0
                in V.concatMap (\x -> V.map (\z -> (c, x :+ z)) xv) xv
 
+fractalP :: V.Vector (Par ((Float, Float), Int))
+fractalP = V.map (\x -> (spawnP . fractalCalc $ x) >>= get) complexBlock 
 
 fractal :: Picture
-fractal =  mconcat . V.toList . V.map (blockf . fractalCalc) $ complexBlock
+fractal =  mconcat . V.toList . V.map blockf . runPar . sequence $ fractalP
 
 
 main :: IO ()
